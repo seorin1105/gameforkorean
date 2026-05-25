@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>반짝반짝 맞춤법 OX 퀴즈</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            text-align: center;
+            background-color: #f7f9fc;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 550px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 26px;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        /* 진행 바 */
+        .progress-bar {
+            font-size: 16px;
+            font-weight: bold;
+            color: #34495e;
+            background: #edf2f7;
+            padding: 8px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        /* 보여주는 구역 (SHOWAREA) */
+        .show-area {
+            background-color: #f0f4f8;
+            border: 2px dashed #3498db;
+            border-radius: 15px;
+            padding: 30px 20px;
+            margin-bottom: 25px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .sentence {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            line-height: 1.5;
+        }
+        .highlight {
+            color: #e74c3c;
+            text-decoration: underline;
+            font-size: 26px;
+        }
+        /* 아동이 선택하는 구역 (SELECTAREA) */
+        .select-area {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        .ox-btn {
+            width: 140px;
+            height: 140px;
+            font-size: 70px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+        .btn-o { background-color: #2ecc71; }
+        .btn-x { background-color: #e74c3c; }
+        .ox-btn:hover { transform: scale(1.08); }
+        .ox-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+        /* 결과 및 해설 구역 */
+        .result-area {
+            margin-top: 20px;
+            min-height: 120px;
+        }
+        #feedback {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .correct { color: #2ecc71; }
+        .wrong { color: #e74c3c; }
+        
+        #explanation {
+            font-size: 15px;
+            color: #555;
+            background: #fdf6e2;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+            line-height: 1.5;
+            border-left: 5px solid #f39c12;
+        }
+        
+        /* 다음 문제 버튼 */
+        .next-btn {
+            display: none;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        .next-btn:hover { background-color: #2980b9; }
+
+        /* 최종 결과 화면 */
+        .final-screen {
+            display: none;
+        }
+        .final-score {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 30px 0;
+        }
+        .restart-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>반짝반짝 맞춤법 OX 퀴즈</h1>
+    <div class="subtitle">밑줄 친 단어가 올바른 맞춤법인지 맞춰보세요!</div>
+
+    <div id="quizArea">
+        <div class="progress-bar" id="progressBar">문제 1 / 10</div>
+        
+        <div class="show-area">
+            <div class="sentence" id="questionSentence">문장 로딩 중...</div>
+        </div>
+
+        <div class="select-area">
+            <button class="ox-btn btn-o" onclick="submitAnswer(true)">O</button>
+            <button class="ox-btn btn-x" onclick="submitAnswer(false)">X</button>
+        </div>
+
+        <div class="result-area">
+            <div id="feedback"></div>
+            <div id="explanation"></div>
+            <button class="next-btn" id="nextBtn" onclick="nextQuestion()">다음 문제로 👉</button>
+        </div>
+    </div>
+
+    <div id="finalArea" class="final-screen">
+        <h2>🎉 퀴즈 종료! 🎉</h2>
+        <div class="final-score" id="finalScore">10문제 중 0문제 성공!</div>
+        <button class="restart-btn" onclick="startGame()">다시 도전하기</button>
+    </div>
+</div>
+
+<script>
+    // 10가지 맞춤법 문제 데이터 세트
+    const quizData = [
+        { sentence: "내 동생은 <span class='highlight'>애</span>가 아주 똑똑해.", answer: true, exp: "🎯 '얘'는 '이 아이'가 줄어든 말이에요. 사람을 가리킬 때는 '얘'가 맞습니다. ('애'는 어린이 자체를 뜻해요)" },
+        { sentence: "그 친구 오늘 서점에 간<span class='highlight'>대</span>.", answer: true, exp: "🎯 다른 사람에게 들은 말을 전달할 때는 '-대'를 써요. '-데'는 내가 직접 경험한 과거를 말할 때 씁니다." },
+        { sentence: "소풍을 앞두니 마음에 <span class='highlight'>설레임</span>이 가득해.", answer: false, exp: "🎯 기본형이 '설레다'이기 때문에 '설렘'이 올바른 표기입니다. (설레임 ❌)" },
+        { sentence: "새해 복 많이 받으시길 <span class='highlight'>바램</span>니다.", answer: false, exp: "🎯 '원하다'의 뜻을 가질 때는 '바람', '바랍니다'가 맞습니다. '바램'은 색이 변했다는 뜻이에요." },
+        { sentence: "하늘에 <span class='highlight'>햇님</span>이 방긋 웃고 있어요.", answer: false, exp: "🎯 '해' 뒤에 높임말인 '님'이 붙을 때는 사이시옷이 들어가지 않고 '해님'이라고 적는 것이 맞습니다." },
+        { sentence: "너 오늘이 <span class='highlight'>몇일</span>인지 아니?", answer: false, exp: "🎯 우리말에 '몇일'이라는 단어는 없습니다! 무조건 '며칠'로만 적어야 해요." },
+        { sentence: "우리는 열심히 <span class='highlight'>삶</span>을 살아가고 있어.", answer: true, exp: "🎯 '살다'의 명사형은 '삶'이 맞습니다. '삼'은 숫자를 뜻하거나 식물(인삼)을 뜻해요." },
+        { sentence: "이게 <span class='highlight'>왠일</span>이야? 정말 반갑다!", answer: false, exp: "🎯 '어찌 된 일'이라는 뜻일 때는 무조건 '웬일'입니다. '왠'은 '왠지(왜인지)'에만 씁니다." },
+        { sentence: "저희 집은 아파트 <span class='highlight'>위층</span>이에요.", answer: true, exp: "🎯 '층'처럼 거센소리(ㅊ, ㅌ, ㅍ, ㅋ) 앞에는 사이시옷이 붙지 않으므로 '위층'이 맞습니다. (윗층 ❌)" },
+        { sentence: "내일 오후에 다시 <span class='highlight'>뵈요</span>.", answer: false, exp: "🎯 '뵈어 요'가 줄어든 말이므로 '봬요'라고 적어야 올바른 표기입니다." },
+        { sentence: "일이 뜻대로 안 풀려서 <span class='highlight'>어떡해</span>?", answer: true, exp: "🎯 '어떡해'는 '어떻게 해'가 줄어든 말로 문장 맨 끝에 쓰입니다. 중간에 올 때는 '어떻게'를 씁니다." }
+    ];
+
+    let currentQuizIndex = 0;
+    let score = 0;
+    let shuffledQuiz = [];
+
+    // 게임 시작 및 초기화
+    function startGame() {
+        document.getElementById('quizArea').style.display = 'block';
+        document.getElementById('finalArea').style.display = 'none';
+        
+        currentQuizIndex = 0;
+        score = 0;
+        
+        // 문제 무작위 셔플 (매판 순서가 바뀜)
+        shuffledQuiz = [...quizData].sort(() => Math.random() - 0.5);
+        // 딱 10문제만 골라내기
+        shuffledQuiz = shuffledQuiz.slice(0, 10);
+
+        nextQuestion();
+    }
+
+    // 다음 문제 출제 구역
+    function nextQuestion() {
+        if (currentQuizIndex >= shuffledQuiz.length) {
+            endGame();
+            return;
+        }
+
+        // UI 초기화
+        document.getElementById('feedback').innerText = '';
+        document.getElementById('explanation').style.display = 'none';
+        document.getElementById('nextBtn').style.display = 'none';
+        
+        // OX 버튼 재활성화
+        const buttons = document.querySelectorAll('.ox-btn');
+        buttons.forEach(btn => btn.disabled = false);
+
+        // 현재 문제 세팅
+        const currentQuiz = shuffledQuiz[currentQuizIndex];
+        document.getElementById('progressBar').innerText = `문제 ${currentQuizIndex + 1} / ${shuffledQuiz.length}`;
+        document.getElementById('questionSentence').innerHTML = currentQuiz.sentence;
+    }
+
+    // 정답 제출 및 채점 구역
+    function submitAnswer(userAnswer) {
+        const currentQuiz = shuffledQuiz[currentQuizIndex];
+        const feedback = document.getElementById('feedback');
+        const explanation = document.getElementById('explanation');
+        
+        // 버튼 비활성화
+        const buttons = document.querySelectorAll('.ox-btn');
+        buttons.forEach(btn => btn.disabled = true);
+
+        // 채점 및 피드백
+        if (userAnswer === currentQuiz.answer) {
+            feedback.innerText = "🎉 정답입니다! 아주 훌륭해요!";
+            feedback.className = "correct";
+            score++;
+        } else {
+            feedback.innerText = "❌ 아쉬워요! 틀렸습니다.";
+            feedback.className = "wrong";
+        }
+
+        // 해설창 보여주기
+        explanation.innerHTML = currentQuiz.exp;
+        explanation.style.display = "block";
+
+        // 다음 문제 버튼 활성화
+        document.getElementById('nextBtn').style.display = "inline-block";
+        currentQuizIndex++;
+    }
+
+    // 게임 종료
+    function endGame() {
+        document.getElementById('quizArea').style.display = 'none';
+        document.getElementById('finalArea').style.display = 'block';
+        document.getElementById('finalScore').innerText = `10문제 중 ${score}문제를 맞혔습니다!`;
+    }
+
+    // 첫 페이지 로딩 시 게임 가동
+    window.onload = startGame;
+</script>
+
+</body>
+</html>
