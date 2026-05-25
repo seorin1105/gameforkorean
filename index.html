@@ -3,286 +3,349 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>세 자리 수 곱하기 두 자리 수 연습 (주관식)</title>
+    <title>단어 관계 기억력 게임</title>
     <style>
         body {
             font-family: 'Malgun Gothic', sans-serif;
             text-align: center;
-            background-color: #f4f7f6;
+            background-color: #f5f6fa;
             margin: 0;
             padding: 20px;
         }
         .container {
-            max-width: 500px;
+            max-width: 700px;
             margin: 0 auto;
             background: white;
-            padding: 25px;
+            padding: 20px;
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        h1 {
-            color: #2c3e50;
-            font-size: 24px;
-            margin-bottom: 15px;
-        }
-        /* 대시보드 (점수 및 시간 표시) */
-        .dashboard {
-            display: flex;
-            justify-content: space-between;
-            background: #e8f4fd;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #34495e;
-            margin-bottom: 20px;
-        }
+        h1 { color: #2c3e50; margin-bottom: 10px; }
+        
         /* 난이도 선택 구역 */
         .level-area {
             margin-bottom: 20px;
-            padding: 10px;
-            background: #eee;
+            padding: 12px;
+            background: #e8f4fd;
             border-radius: 10px;
         }
         .level-area label {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
-            margin: 0 10px;
+            margin: 0 15px;
             cursor: pointer;
+            color: #34495e;
         }
-        /* 보여주는 구역 (SHOWAREA) */
-        .show-area {
-            font-size: 40px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 20px 0;
-            padding: 20px;
-            border: 2px dashed #3498db;
-            border-radius: 10px;
-            background-color: #f0f8ff;
-        }
-        /* 선택 구역 (SELECTAREA) - 주관식 입력 */
-        .select-area {
-            margin: 20px 0;
-        }
-        .answer-input {
-            width: 60%;
-            padding: 12px;
-            font-size: 24px;
-            text-align: center;
-            border: 2px solid #bdc3c7;
-            border-radius: 8px;
-            outline: none;
-        }
-        .answer-input:focus {
-            border-color: #3498db;
-        }
-        .submit-btn {
-            width: 30%;
-            padding: 14px;
-            font-size: 20px;
-            font-weight: bold;
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-left: 5px;
-            vertical-align: top;
-        }
-        .submit-btn:hover {
-            background-color: #27ae60;
-        }
-        /* 피드백 메시지 */
-        #feedback {
+
+        /* 상태 창 (타이머 및 안내) */
+        .status-bar {
             font-size: 18px;
             font-weight: bold;
+            color: #e67e22;
+            margin-bottom: 15px;
             height: 25px;
-            margin-top: 15px;
         }
-        .correct { color: #2ecc71; }
-        .wrong { color: #e74c3c; }
-        
-        /* 게임 완료 화면 */
-        .result-screen {
-            display: none;
-            font-size: 22px;
-            font-weight: bold;
-            color: #2c3e50;
-            line-height: 1.6;
+
+        /* 카드 게임 구역 */
+        .game-board {
+            display: grid;
+            gap: 10px;
+            margin: 20px auto;
+            max-width: 600px;
+            perspective: 1000px; /* 3D 효과 */
         }
-        .restart-btn {
+
+        /* 카드 스타일 */
+        .card {
+            height: 90px;
             background-color: #3498db;
             color: white;
-            padding: 12px 30px;
-            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            padding: 5px;
+            box-sizing: border-box;
+        }
+        .card.hidden {
+            background-color: #2c3e50; /* 뒷면 색상 */
+            color: transparent; /* 글자 숨김 */
+        }
+        .card.matched {
+            background-color: #2ecc71; /* 맞춘 카드 */
+            color: white;
+            cursor: default;
+            visibility: visible;
+        }
+        .card.selected {
+            background-color: #e74c3c; /* 선택된 카드 */
+            color: white;
+        }
+
+        /* 관계 맞추기 팝업창 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-content h3 { margin-top: 0; font-size: 22px; color: #333; }
+        .relation-btn {
+            display: block;
+            width: 200px;
+            padding: 12px;
+            margin: 10px auto;
+            font-size: 16px;
+            font-weight: bold;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 20px;
+            color: white;
+            transition: 0.2s;
         }
+        .btn-syn { background-color: #9b59b6; } /* 유사 */
+        .btn-ant { background-color: #e67e22; } /* 반대 */
+        .btn-inc { background-color: #16a085; } /* 포함 */
+        .relation-btn:hover { opacity: 0.9; transform: scale(1.02); }
+
+        /* 피드백 메시지 */
+        #feedback { font-size: 18px; font-weight: bold; margin-top: 15px; height: 25px; }
+        .text-correct { color: #2ecc71; }
+        .text-wrong { color: #e74c3c; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- 1. 제목 -->
-    <h1>숫자 곱하기 주관식 게임</h1>
+    <h1>단어 관계 기억력 게임</h1>
 
-    <!-- 상단 정보 (진행도 및 타이머) -->
-    <div class="dashboard" id="dashboard">
-        <div id="scoreProgress">맞힌 개수: 0 / 10</div>
-        <div id="timer">시간: 0.0초</div>
+    <div class="level-area">
+        <label><input type="radio" name="difficulty" value="easy" checked onclick="startGame()"> 하 (16장 / 5초)</label>
+        <label><input type="radio" name="difficulty" value="medium" onclick="startGame()"> 중 (25장 / 10초)</label>
+        <label><input type="radio" name="difficulty" value="hard" onclick="startGame()"> 상 (36장 / 15초)</label>
     </div>
 
-    <!-- 게임 플레이 영역 -->
-    <div id="gamePlayArea">
-        <!-- 2. 난이도 선택 구역 -->
-        <div class="level-area">
-            <label><input type="radio" name="level" value="easy" checked onclick="resetGame()"> 쉬움 (끝자리 0)</label>
-            <label><input type="radio" name="level" value="hard" onclick="resetGame()"> 보통 (랜덤 숫자)</label>
-        </div>
+    <div class="status-bar" id="statusBar">게임을 시작합니다!</div>
 
-        <!-- 3. 보여주는 구역 (SHOWAREA) -->
-        <div class="show-area" id="showArea">
-            0 × 0 = ?
-        </div>
+    <div class="game-board" id="gameBoard"></div>
 
-        <!-- 4. 아동이 선택(입력)하는 구역 (SELECTAREA) -->
-        <div class="select-area" id="selectArea">
-            <input type="number" id="answerInput" class="answer-input" placeholder="정답 입력" onkeyup="if(window.event.keyCode==13){checkAnswer()}">
-            <button class="submit-btn" onclick="checkAnswer()">확인</button>
-        </div>
+    <div id="feedback"></div>
+</div>
 
-        <!-- 결과 메시지 영역 -->
-        <div id="feedback"></div>
-    </div>
-
-    <!-- 5. 게임 종료 시 보여줄 결과 화면 -->
-    <div id="resultScreen" class="result-screen">
-        <p>🎉 축하합니다! 🎉</p>
-        <p>10문제를 모두 맞혔습니다!</p>
-        <p style="color: #e67e22; font-size: 26px;">총 소요 시간: <span id="finalTime">0</span>초</p>
-        <button class="restart-btn" onclick="resetGame()">다시 도전하기</button>
+<div class="modal" id="relationModal">
+    <div class="modal-content">
+        <h3 id="modalTitle">두 단어는 무슨 관계일까요?</h3>
+        <p id="modalWords" style="font-size: 18px; font-weight: bold; color: #34495e;"></p>
+        <button class="relation-btn btn-syn" onclick="submitRelation('유사')">뜻이 비슷한 단어 (유의어)</button>
+        <button class="relation-btn btn-ant" onclick="submitRelation('반대')">뜻이 반대인 단어 (반의어)</button>
+        <button class="relation-btn btn-inc" onclick="submitRelation('포함')">의미를 포함하는 단어 (상하어)</button>
     </div>
 </div>
 
 <script>
-    let correctAnswer = 0;
-    let correctCount = 0;
-    const targetCount = 10; // 목표 정답 개수
-    
-    let timerInterval = null;
-    let startTime = null;
-    let isGameRunning = false;
+    // 단어 데이터 풀 (관계 타입: 유사, 반대, 포함)
+    // 포함 관계의 경우 [하위개념, 상위개념] 순서로 매칭되도록 설계
+    const wordPool = [
+        // 유사한 단어
+        { w1: "기쁨", w2: "즐거움", type: "유사" },
+        { w1: "친구", w2: "벗", type: "유사" },
+        { w1: "바다", w2: "대양", type: "유사" },
+        { w1: "가게", w2: "점포", type: "유사" },
+        { w1: "생각", w2: "고려", type: "유사" },
+        { w1: "태양", w2: "해", type: "유사" },
+        // 반대인 단어
+        { w1: "길다", w2: "짧다", type: "반대" },
+        { w1: "덥다", w2: "춥다", type: "반대" },
+        { w1: "높다", w2: "낮다", type: "반대" },
+        { w1: "크다", w2: "작다", type: "반대" },
+        { w1: "기쁨", w2: "슬픔", type: "반대" },
+        { w1: "승리", w2: "패배", type: "반대" },
+        // 의미를 포함하는 단어 (하위 단어와 상위 단어)
+        { w1: "사과", w2: "과일", type: "포함" },
+        { w1: "자동차", w2: "교통수단", type: "포함" },
+        { w1: "장미", w2: "식물", type: "포함" },
+        { w1: "호랑이", w2: "동물", type: "포함" },
+        { w1: "책상", w2: "가구", type: "포함" },
+        { w1: "연필", w2: "문구류", type: "포함" }
+    ];
 
-    // 랜덤 정수 생성 함수
-    function getRandomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+    let cardsData = [];
+    let selectedCards = [];
+    let matchedCount = 0;
+    let previewTimer = null;
+    let isClickable = false;
 
-    // 타이머 시작 함수
-    function startTimer() {
-        startTime = performance.now();
-        timerInterval = setInterval(() => {
-            const currentTime = performance.now();
-            const elapsedTime = ((currentTime - startTime) / 1000).toFixed(1);
-            document.getElementById('timer').innerText = `시간: ${elapsedTime}초`;
-        }, 100);
-    }
+    // 게임 시작 및 세팅
+    function startGame() {
+        clearInterval(previewTimer);
+        document.getElementById('feedback').innerText = '';
+        selectedCards = [];
+        matchedCount = 0;
+        isClickable = false;
 
-    // 완전히 처음부터 다시 시작 (난이도 변경이나 게임 완료 후)
-    function resetGame() {
-        correctCount = 0;
-        isGameRunning = false;
-        clearInterval(timerInterval);
-        document.getElementById('timer').innerText = `시간: 0.0초`;
-        document.getElementById('scoreProgress').innerText = `맞힌 개수: 0 / ${targetCount}`;
-        
-        document.getElementById('gamePlayArea').style.display = 'block';
-        document.getElementById('dashboard').style.display = 'flex';
-        document.getElementById('resultScreen').style.display = 'none';
-        
-        nextQuestion();
-    }
+        const diff = document.querySelector('input[name="difficulty"]:checked').value;
+        let cardCount, previewTime, cols;
 
-    // 다음 문제 생성 (무제한 생성)
-    function nextQuestion() {
-        const feedback = document.getElementById('feedback');
-        feedback.innerText = '';
-        feedback.className = '';
-        
-        const inputField = document.getElementById('answerInput');
-        inputField.value = '';
-        inputField.focus();
+        if (diff === 'easy') { cardCount = 16; previewTime = 5; cols = 4; }
+        else if (diff === 'medium') { cardCount = 24; previewTime = 10; cols = 6; } // 홀수 25장 대신 짝수 매칭을 위해 24장(12쌍)으로 자동 보정합니다.
+        else { cardCount = 36; previewTime = 15; cols = 6; }
 
-        const level = document.querySelector('input[name="level"]:checked').value;
-        let num1, num2;
+        const pairCount = cardCount / 2;
 
-        if (level === 'easy') {
-            num1 = getRandomInt(10, 99) * 10; 
-            num2 = getRandomInt(1, 9) * 10;
-        } else {
-            num1 = getRandomInt(100, 999);
-            num2 = getRandomInt(10, 99);
-        }
+        // 단어 풀 셔플 후 필요한 만큼 데이터 가져오기
+        const shuffledPool = [...wordPool].sort(() => Math.random() - 0.5);
+        const selectedPairs = shuffledPool.slice(0, pairCount);
 
-        correctAnswer = num1 * num2;
-        document.getElementById('showArea').innerText = `${num1} × ${num2} = ?`;
-    }
+        // 카드 컴포넌트 데이터 조립
+        cardsData = [];
+        selectedPairs.forEach((pair, index) => {
+            cardsData.push({ id: index * 2, word: pair.w1, pairId: index, type: pair.type, partner: pair.w2 });
+            cardsData.push({ id: index * 2 + 1, word: pair.w2, pairId: index, type: pair.type, partner: pair.w1 });
+        });
 
-    // 정답 확인 함수
-    function checkAnswer() {
-        // 첫 입력을 시작하면 타이머 작동
-        if (!isGameRunning) {
-            isGameRunning = true;
-            startTimer();
-        }
+        // 카드 무작위 섞기
+        cardsData.sort(() => Math.random() - 0.5);
 
-        const inputField = document.getElementById('answerInput');
-        const userAnswer = parseInt(inputField.value);
-        const feedback = document.getElementById('feedback');
+        // 보드판 스타일 레이아웃 설정
+        const board = document.getElementById('gameBoard');
+        board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        board.innerHTML = '';
 
-        if (isNaN(userAnswer)) {
-            feedback.innerText = "숫자를 입력해주세요!";
-            feedback.className = "wrong";
-            return;
-        }
+        // 카드 생성 및 화면 배치
+        cardsData.forEach(data => {
+            const cardEl = document.createElement('div');
+            cardEl.classList.add('card');
+            cardEl.innerText = data.word;
+            cardEl.dataset.id = data.id;
+            cardEl.onclick = () => handleCardClick(cardEl, data);
+            board.appendChild(cardEl);
+        });
 
-        if (userAnswer === correctAnswer) {
-            correctCount++;
-            document.getElementById('scoreProgress').innerText = `맞힌 개수: ${correctCount} / ${targetCount}`;
-            
-            // 10개를 모두 맞혔을 때
-            if (correctCount >= targetCount) {
-                endGame();
+        // 미리보기 카운트다운 타이머 작동
+        let timeLeft = previewTime;
+        const statusBar = document.getElementById('statusBar');
+        statusBar.innerText = `👀 단어의 위치와 관계를 기억하세요! (${timeLeft}초 남음)`;
+
+        previewTimer = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(previewTimer);
+                statusBar.innerText = "🎮 연관된 두 단어를 차례대로 클릭하세요!";
+                // 카드 전체 뒤집기
+                document.querySelectorAll('.card').forEach(card => card.classList.add('hidden'));
+                isClickable = true;
             } else {
-                feedback.innerText = "🎉 정답입니다!";
-                feedback.className = "correct";
-                setTimeout(nextQuestion, 800); // 정답이면 0.8초 뒤 다음 문제로
+                statusBar.innerText = `👀 단어의 위치와 관계를 기억하세요! (${timeLeft}초 남음)`;
             }
-        } else {
-            feedback.innerText = "틀렸어요! 다시 계산해보세요.";
-            feedback.className = "wrong";
-            inputField.select(); // 틀렸을 때 숫자를 바로 다시 쓸 수 있게 드래그 선택 처리
+        }, 1000);
+    }
+
+    // 카드 클릭 이벤트 핸들러
+    function handleCardClick(element, data) {
+        if (!isClickable || element.classList.contains('matched') || element.classList.contains('selected')) return;
+
+        // 카드 오픈
+        element.classList.remove('hidden');
+        element.classList.add('selected');
+        selectedCards.push({ element, data });
+
+        // 카드 두 개가 선택되었을 때
+        if (selectedCards.length === 2) {
+            isClickable = false; // 검사하는 동안 클릭 방지
+            const card1 = selectedCards[0];
+            const card2 = selectedCards[1];
+
+            // 짝이 맞는지 검사 (동일한 짝 번호인지)
+            if (card1.data.pairId === card2.data.pairId) {
+                // 단어가 맞으면 관계 선택 모달 팝업 오픈
+                setTimeout(() => {
+                    openRelationModal(card1.data, card2.data);
+                }, 400);
+            } else {
+                // 틀렸을 경우 1초 후 다시 뒤집기
+                document.getElementById('feedback').innerText = "❌ 짝이 맞지 않아요! 다시 집중해 봐요.";
+                document.getElementById('feedback').className = "text-wrong";
+                setTimeout(() => {
+                    card1.element.classList.add('hidden');
+                    card1.element.classList.remove('selected');
+                    card2.element.classList.add('hidden');
+                    card2.element.className = 'card hidden';
+                    selectedCards = [];
+                    isClickable = true;
+                    document.getElementById('feedback').innerText = '';
+                }, 1000);
+            }
         }
     }
 
-    // 게임 종료 처리
-    function endGame() {
-        clearInterval(timerInterval);
-        const currentTime = performance.now();
-        const finalTime = ((currentTime - startTime) / 1000).toFixed(1);
-        
-        // 정답 구역 숨기고 결과창 띄우기
-        document.getElementById('gamePlayArea').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'none';
-        document.getElementById('resultScreen').style.display = 'block';
-        document.getElementById('finalTime').innerText = finalTime;
+    // 관계 선택 모달 열기
+    function openRelationModal(data1, data2) {
+        const modal = document.getElementById('relationModal');
+        const modalWords = document.getElementById('modalWords');
+        modalWords.innerText = `[ ${data1.word} ]  와  [ ${data2.word} ]`;
+        modal.style.display = 'flex';
     }
 
-    // 페이지 로드 시 게임 초기화
-    window.onload = resetGame;
+    // 관계 정답 제출
+    function submitRelation(selectedType) {
+        const modal = document.getElementById('relationModal');
+        modal.style.display = 'none';
+
+        const card1 = selectedCards[0];
+        const card2 = selectedCards[1];
+        const correctType = card1.data.type; // '유사', '반대', '포함'
+
+        const feedback = document.getElementById('feedback');
+
+        if (selectedType === correctType) {
+            // 단어 짝 + 관계까지 모두 완벽히 맞춘 경우 (최종 정답)
+            feedback.innerText = `🎯 정답입니다! 두 단어는 [${correctType}] 관계입니다.`;
+            feedback.className = "text-correct";
+
+            card1.element.className = 'card matched';
+            card2.element.className = 'card matched';
+            
+            matchedCount += 2;
+
+            // 모든 카드를 다 맞췄는지 확인
+            if (matchedCount === cardsData.length) {
+                document.getElementById('statusBar').innerText = "🎉 대단해요! 모든 단어 카드를 전부 맞췄습니다!";
+            }
+            selectedCards = [];
+            isClickable = true;
+        } else {
+            // 단어 짝은 맞았으나 관계를 틀린 경우 -> 오답 처리되어 다시 뒤집힘
+            feedback.innerText = `❌ 아쉽네요! 관계를 틀렸어요. 두 단어는 [${correctType}] 관계였습니다.`;
+            feedback.className = "text-wrong";
+
+            setTimeout(() => {
+                card1.element.className = 'card hidden';
+                card2.element.className = 'card hidden';
+                selectedCards = [];
+                isClickable = true;
+                feedback.innerText = '';
+            }, 2000);
+        }
+    }
+
+    // 페이지 접속 시 자동으로 게임 스타트
+    window.onload = startGame;
 </script>
 
 </body>
